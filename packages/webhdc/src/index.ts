@@ -1,0 +1,80 @@
+export {
+  AUTH_TLV,
+  AUTH_TYPE,
+  COMMAND,
+  HDC,
+  HDC_USB_FILTERS,
+  HDC_USB_INTERFACE,
+  MESSAGE_LEVEL,
+  USB_OPTION,
+} from './constants.js';
+export {
+  HdcDisconnectedError,
+  HdcError,
+  HdcProtocolError,
+  HdcTimeoutError,
+  HdcUnsupportedError,
+} from './errors.js';
+export { HdcKeyStore } from './auth.js';
+export type { HdcKeyStoreOptions } from './auth.js';
+export { HdcWebUsbTransport } from './usb-transport.js';
+export { HdcClient, HdcShell } from './client.js';
+export type {
+  HdcClientOptions,
+  HdcExecOptions,
+  HdcFileReceiveOptions,
+  HdcFileSendOptions,
+  HdcRequestDeviceOptions,
+  HdcShellOptions,
+} from './client.js';
+export type { HdcTransportOptions } from './usb-transport.js';
+export type {
+  HdcAuthorizationRequest,
+  HdcBinaryInput,
+  HdcClientEventMap,
+  HdcDaemonInfo,
+  HdcDeviceInfo,
+  HdcExecResult,
+  HdcFileReceiveResult,
+  HdcFileSendResult,
+  HdcHandshake,
+  HdcInteger,
+  HdcInterfaceInfo,
+  HdcLogEntry,
+  HdcLogLevel,
+  HdcMessage,
+  HdcPacket,
+  HdcPayloadProtect,
+  HdcProgress,
+  HdcShellCloseResult,
+  HdcStatus,
+  HdcStatusState,
+  HdcTransferConfig,
+  HdcTransferPayload,
+  HdcUsbAlternateInterface,
+  HdcUsbApi,
+  HdcUsbConfiguration,
+  HdcUsbDevice,
+  HdcUsbDeviceFilter,
+  HdcUsbEndpoint,
+  HdcUsbHeader,
+  HdcUsbInTransferResult,
+  HdcUsbInterface,
+  HdcUsbOutTransferResult,
+  HdcWritable,
+} from './types.js';
+export {
+  decodeHandshake,
+  decodeHdcPacket,
+  decodePayloadProtect,
+  decodeTransferConfig,
+  decodeTransferPayload,
+  decodeUsbHeader,
+  encodeHandshake,
+  encodeHdcPacket,
+  encodePayloadProtect,
+  encodeTransferConfig,
+  encodeTransferPayload,
+  encodeUsbHeader,
+  isUsbHeader,
+} from './protocol.js';

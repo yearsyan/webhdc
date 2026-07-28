@@ -1,0 +1,155 @@
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--terminal-border);
+  border-radius: 8px;
+  background: var(--terminal-bg);
+}
+
+.seg {
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--terminal-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.seg:hover:not(:disabled) {
+  color: var(--terminal-text);
+}
+
+.seg:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.segActive,
+.segActive:hover:not(:disabled) {
+  background: var(--terminal-raised);
+  color: #ffffff;
+}
+
+.viewport {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  margin-bottom: 12px;
+  padding: 8px 6px 8px 12px;
+  overflow: hidden;
+  border: 1px solid var(--terminal-border);
+  border-radius: 8px;
+  background: var(--terminal-bg);
+}
+
+.termHost {
+  flex: 1;
+  min-height: 420px;
+}
+
+.termHost :global(.xterm) {
+  height: 100%;
+}
+
+.termHost :global(.xterm-viewport)::-webkit-scrollbar {
+  width: 8px;
+}
+
+.termHost :global(.xterm-viewport)::-webkit-scrollbar-thumb {
+  border: 0;
+  border-radius: 999px;
+  background: #2d333b;
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prompt {
+  color: var(--terminal-blue);
+  font-family: var(--mono);
+  font-weight: 700;
+}
+
+.commandInput {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  padding: 0 11px;
+  border: 1px solid var(--terminal-border);
+  border-radius: 8px;
+  outline: none;
+  background: var(--terminal-bg);
+  color: var(--terminal-text);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  transition: border-color 0.15s;
+}
+
+.commandInput::placeholder {
+  color: var(--terminal-muted);
+}
+
+.commandInput:focus {
+  border-color: var(--terminal-blue);
+}
+
+.commandInput:disabled {
+  opacity: 0.5;
+}
+
+.ghostDark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--terminal-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--terminal-muted);
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.ghostDark:hover:not(:disabled) {
+  border-color: var(--terminal-muted);
+  color: var(--terminal-text);
+}
+
+.shellHint {
+  padding: 9px 12px;
+  border: 1px dashed var(--terminal-border);
+  border-radius: 8px;
+  color: var(--terminal-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.shellHint code {
+  background: transparent;
+  color: var(--terminal-blue);
+}
+
+@media (max-width: 720px) {
+  .inputRow {
+    flex-wrap: wrap;
+  }
+
+  .commandInput {
+    flex-basis: 100%;
+    order: 3;
+  }
+}

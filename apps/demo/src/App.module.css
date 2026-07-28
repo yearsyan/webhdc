@@ -1,0 +1,51 @@
+.page {
+  width: min(1440px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 20px 0 48px;
+}
+
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+
+.terminal {
+  grid-column: span 8;
+  grid-row: span 2;
+  min-height: 660px;
+}
+
+.device {
+  grid-column: span 4;
+}
+
+.install {
+  grid-column: span 4;
+}
+
+.transfer {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1024px) {
+  .terminal,
+  .device,
+  .install,
+  .transfer {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    min-height: 0;
+  }
+
+  .terminal {
+    min-height: 560px;
+  }
+}
+
+.footer {
+  margin-top: 28px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}

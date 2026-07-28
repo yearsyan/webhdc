@@ -1,0 +1,81 @@
+export const HDC_USB_INTERFACE = Object.freeze({
+  classCode: 0xff,
+  subclassCode: 0x50,
+  protocolCode: 0x01,
+});
+
+export const HDC_USB_FILTERS = Object.freeze([HDC_USB_INTERFACE]);
+
+export const USB_OPTION = Object.freeze({
+  HEADER: 1,
+  RESET: 2,
+});
+
+export const AUTH_TYPE = Object.freeze({
+  NONE: 0,
+  TOKEN: 1,
+  SIGNATURE: 2,
+  PUBLIC_KEY: 3,
+  OK: 4,
+  FAIL: 5,
+  SSL_TLS_PSK: 6,
+});
+
+export const COMMAND = Object.freeze({
+  KERNEL_HELP: 0,
+  KERNEL_HANDSHAKE: 1,
+  KERNEL_CHANNEL_CLOSE: 2,
+  KERNEL_ECHO: 9,
+  KERNEL_ECHO_RAW: 10,
+  KERNEL_ENABLE_KEEPALIVE: 11,
+  KERNEL_WAKEUP_SLAVE_TASK: 12,
+
+  UNITY_EXECUTE: 1001,
+  UNITY_REMOUNT: 1002,
+  UNITY_REBOOT: 1003,
+  UNITY_RUNMODE: 1004,
+  UNITY_HILOG: 1005,
+  UNITY_ROOTRUN: 1007,
+  UNITY_EXECUTE_EX: 1200,
+
+  SHELL_INIT: 2000,
+  SHELL_DATA: 2001,
+
+  FILE_INIT: 3000,
+  FILE_CHECK: 3001,
+  FILE_BEGIN: 3002,
+  FILE_DATA: 3003,
+  FILE_FINISH: 3004,
+  FILE_MODE: 3006,
+  DIR_MODE: 3007,
+
+  HEARTBEAT: 5000,
+});
+
+export const MESSAGE_LEVEL = Object.freeze({
+  FAIL: 0,
+  INFO: 1,
+  OK: 2,
+});
+
+export const HDC = Object.freeze({
+  VERSION: 'Ver: 3.2.0d',
+  HANDSHAKE_BANNER: 'OHOS HDC',
+  PROTOCOL_VERSION: 1,
+  PAYLOAD_VCODE: 0x09,
+  USB_HEADER_SIZE: 11,
+  PAYLOAD_HEADER_SIZE: 11,
+  TRANSFER_PREFIX_SIZE: 64,
+  MAX_USB_BLOCK_SIZE: 512 * 1024,
+  MAX_HDC_PAYLOAD_SIZE: 511 * 1024,
+  STABLE_HDC_PAYLOAD_SIZE: 60 * 1024,
+});
+
+export const AUTH_TLV = Object.freeze({
+  AUTH_TYPE: 'authtype',
+  DEVICE_NAME: 'devname',
+  EMERGENCY_MESSAGE: 'emgmsg',
+  DAEMON_AUTH_STATUS: 'daemonauthstatus',
+  SHELL_OPTION: '1200',
+  SUPPORT_FEATURES: 'supportfeatures',
+});
