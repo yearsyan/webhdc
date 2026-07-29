@@ -1,6 +1,6 @@
 {
   "name": "@webhdc/core",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A dependency-free HDC client for HarmonyOS devices over WebUSB",
   "type": "module",
   "sideEffects": false,
