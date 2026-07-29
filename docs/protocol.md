@@ -107,15 +107,3 @@ RSA 3072/SHA-512。后续流程：
 
 每个文件数据块预留 64 字节 protobuf 前缀，字段为文件偏移、压缩类型、压缩长度和
 原始长度。当前实现只声明并接受 `COMPRESS_NONE`。
-
-## 对照位置
-
-本地旧版实现中的主要入口：
-
-- `../../developtools_hdc_standard/src/common/session.cpp`
-- `../../developtools_hdc_standard/src/common/usb.cpp`
-- `../../developtools_hdc_standard/src/common/serial_struct.h`
-- `../../developtools_hdc_standard/src/common/transfer.cpp`
-
-当前协议对应上游仓库中的同名文件，以及 `src/common/auth.cpp`、
-`src/daemon/daemon.cpp` 和 `src/host/server.cpp`。
