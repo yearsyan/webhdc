@@ -30,9 +30,13 @@ jobs:
 
       - name: Deploy to yearsyan.github.io/webhdc
         env:
-          DEPLOY_TOKEN: ${{ secrets.PAGES_DEPLOY_TOKEN }}
+          DEPLOY_KEY: ${{ secrets.PAGES_DEPLOY_KEY }}
         run: |
-          git clone --depth 1 "https://x-access-token:${DEPLOY_TOKEN}@github.com/yearsyan/yearsyan.github.io.git" pages-repo
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          git clone --depth 1 git@github.com:yearsyan/yearsyan.github.io.git pages-repo
           cd pages-repo
           rm -rf webhdc
           mkdir -p webhdc
