@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useHdc } from '../hdc/HdcProvider';
 import { cleanTerminalText } from '../utils/format';
-import { Panel } from './Panel';
 import shared from '../styles/shared.module.css';
-import styles from './DevicePanel.module.css';
+import styles from './DevicePopover.module.css';
 
 interface ParamRow {
   label: string;
@@ -19,39 +18,10 @@ const PARAM_COMMANDS: ReadonlyArray<readonly [string, string]> = [
   ['构建类型', 'param get const.product.build.type'],
 ];
 
-export function DevicePanel({ className }: { className?: string }) {
-  const { client, device, connected } = useHdc();
+export function DevicePopover() {
+  const { client, device } = useHdc();
   const [params, setParams] = useState<ParamRow[] | null>(null);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!connected) {
-      setParams(null);
-    }
-  }, [connected]);
-
-  const readParams = async () => {
-    setLoading(true);
-    const rows: ParamRow[] = [];
-    try {
-      for (const [label, command] of PARAM_COMMANDS) {
-        let value = '—';
-        try {
-          const result = await client.exec(command, { timeout: 10_000 });
-          const text = cleanTerminalText(result.stdout).trim();
-          if (text) {
-            value = text;
-          }
-        } catch {
-          // 单个参数读取失败时保持占位
-        }
-        rows.push({ label, value });
-        setParams([...rows]);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const daemon = device?.daemon ?? null;
   const rows: ParamRow[] = [
@@ -71,17 +41,32 @@ export function DevicePanel({ className }: { className?: string }) {
     { label: '授权状态', value: daemon?.authStatus || '—' },
   ];
 
-  return (
-    <Panel
-      kicker="DEVICE"
-      title="设备信息"
-      className={className}
-      extra={
-        <span className={`${shared.badge} ${connected ? shared.badgeOnline : ''}`.trim()}>
-          {connected ? '已连接' : '未连接'}
-        </span>
+  const readParams = async () => {
+    setLoading(true);
+    const next: ParamRow[] = [];
+    try {
+      for (const [label, command] of PARAM_COMMANDS) {
+        let value = '—';
+        try {
+          const result = await client.exec(command, { timeout: 10_000 });
+          const text = cleanTerminalText(result.stdout).trim();
+          if (text) {
+            value = text;
+          }
+        } catch {
+          // 单个参数读取失败时保持占位
+        }
+        next.push({ label, value });
+        setParams([...next]);
       }
-    >
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className={styles.pop}>
+      <p className={styles.popTitle}>设备信息</p>
       <dl className={styles.rows}>
         {rows.map((row) => (
           <div key={row.label} className={styles.row}>
@@ -101,18 +86,6 @@ export function DevicePanel({ className }: { className?: string }) {
         </div>
       )}
 
-      <div className={`${styles.note} ${connected ? styles.noteOk : ''}`.trim()}>
-        <span aria-hidden="true">{connected ? '✓' : '!'}</span>
-        {connected ? (
-          <p>浏览器已独占 HDC USB 接口。</p>
-        ) : (
-          <p>
-            若接口被占用，请先退出 DevEco Studio 或执行 <code>hdc kill</code>
-            ，再点击连接。
-          </p>
-        )}
-      </div>
-
       <div className={styles.params}>
         <div className={styles.paramsHeader}>
           <h3>设备参数</h3>
@@ -120,9 +93,9 @@ export function DevicePanel({ className }: { className?: string }) {
             className={`${shared.button} ${shared.buttonSecondary} ${styles.paramsButton}`}
             type="button"
             onClick={readParams}
-            disabled={!connected || loading}
+            disabled={loading}
           >
-            {loading ? '读取中…' : '读取设备参数'}
+            {loading ? '读取中…' : params ? '重新读取' : '读取'}
           </button>
         </div>
         {params ? (
@@ -138,10 +111,10 @@ export function DevicePanel({ className }: { className?: string }) {
           </table>
         ) : (
           <p className={styles.paramsHint}>
-            连接后通过 <code>param get</code> 读取型号、系统与 ABI 信息。
+            通过 <code>param get</code> 读取型号、系统版本与 ABI 信息。
           </p>
         )}
       </div>
-    </Panel>
+    </div>
   );
 }

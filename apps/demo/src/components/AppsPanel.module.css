@@ -1,0 +1,195 @@
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.tools {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.filterInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.keep {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.keep input {
+  accent-color: var(--accent);
+}
+
+.errText {
+  margin-bottom: 8px;
+  color: var(--danger);
+  font-size: 12.5px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.okText {
+  margin-bottom: 8px;
+  color: var(--ok);
+  font-size: 12.5px;
+}
+
+.list {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.appRow {
+  border-top: 1px solid var(--border);
+}
+
+.appRow:first-child {
+  border-top: 0;
+}
+
+.appHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 12px;
+}
+
+.appHead:hover {
+  background: var(--surface-2);
+}
+
+.appNameBtn {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.appNameBtn:hover .appName {
+  color: var(--accent);
+}
+
+.caret {
+  flex-shrink: 0;
+  width: 12px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.appName {
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.appActions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+.miniBtn {
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 11.5px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.miniBtn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.miniBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.miniBtnDanger:hover:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.detail {
+  padding: 10px 12px;
+  border-top: 1px dashed var(--border);
+  background: var(--surface-2);
+}
+
+.detailGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.detailGrid span {
+  color: var(--ink-2);
+}
+
+.detailGrid strong {
+  color: var(--ink);
+  font-family: var(--mono);
+  font-weight: 500;
+}
+
+.raw summary {
+  color: var(--muted);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.raw pre {
+  max-height: 240px;
+  margin: 6px 0 0;
+  overflow: auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.stateText {
+  padding: 22px 12px;
+  color: var(--muted);
+  font-size: 12.5px;
+  text-align: center;
+}
+
+.detail .stateText {
+  padding: 8px 0;
+}
+
+@media (max-width: 1080px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

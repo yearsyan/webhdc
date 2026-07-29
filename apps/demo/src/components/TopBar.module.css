@@ -66,6 +66,14 @@
   flex-wrap: wrap;
 }
 
+.statusWrap {
+  position: relative;
+  display: inline-flex;
+  /* 向下延伸 hover 区域，桥接 pill 与 popover 之间的空隙 */
+  padding-bottom: 10px;
+  margin-bottom: -10px;
+}
+
 .statusPill {
   display: inline-flex;
   align-items: center;
@@ -78,6 +86,70 @@
   color: var(--ink-2);
   font-size: 12px;
   white-space: nowrap;
+}
+
+.statusPillHoverable {
+  cursor: pointer;
+}
+
+.pillCaret {
+  margin-left: 1px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 60;
+  width: 350px;
+  max-width: calc(100vw - 24px);
+  max-height: min(72vh, 600px);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgba(35, 32, 27, 0.16);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    visibility 0.15s;
+}
+
+.statusWrap::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  right: 30px;
+  z-index: 61;
+  width: 9px;
+  height: 9px;
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+  background: var(--surface);
+  transform: rotate(45deg);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s;
+}
+
+.statusWrap:hover .popover,
+.statusWrap:focus-within .popover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.statusWrap:hover::after,
+.statusWrap:focus-within::after {
+  opacity: 1;
+  visibility: visible;
 }
 
 .dot {

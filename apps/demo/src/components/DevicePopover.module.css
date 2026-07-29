@@ -1,3 +1,14 @@
+.pop {
+  padding: 14px 16px 16px;
+}
+
+.popTitle {
+  margin-bottom: 6px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .rows {
   display: flex;
   flex-direction: column;
@@ -8,9 +19,9 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 14px;
-  padding: 7px 0;
+  padding: 6px 0;
   border-bottom: 1px solid var(--border);
-  font-size: 13px;
+  font-size: 12.5px;
 }
 
 .row:last-child {
@@ -38,32 +49,8 @@
   margin-top: 12px;
 }
 
-.note {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 14px;
-  padding: 10px 12px;
-  border: 1px solid rgba(180, 83, 9, 0.25);
-  border-radius: 8px;
-  background: var(--warn-soft);
-  color: var(--warn);
-  font-size: 12.5px;
-  line-height: 1.6;
-}
-
-.note > span {
-  font-weight: 700;
-}
-
-.noteOk {
-  border-color: rgba(23, 128, 61, 0.25);
-  background: var(--ok-soft);
-  color: var(--ok);
-}
-
 .params {
-  margin-top: 16px;
+  margin-top: 14px;
 }
 
 .paramsHeader {
@@ -100,7 +87,7 @@
 }
 
 .paramsTable td {
-  padding: 8px 0;
+  padding: 7px 0;
   border-top: 1px solid var(--border);
   vertical-align: top;
 }

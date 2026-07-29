@@ -1,0 +1,68 @@
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 72px 24px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  text-align: center;
+}
+
+.iconWrap {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.iconWrap svg {
+  width: 34px;
+  height: 34px;
+}
+
+.empty h2 {
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.desc {
+  max-width: 460px;
+  color: var(--ink-2);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+
+.warn {
+  color: var(--warn);
+  font-size: 12.5px;
+}
+
+.error {
+  max-width: 480px;
+  color: var(--danger);
+  font-size: 12.5px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.empty button {
+  min-width: 140px;
+}
+
+@media (max-width: 720px) {
+  .empty {
+    padding: 48px 16px;
+  }
+}

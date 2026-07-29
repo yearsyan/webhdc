@@ -41,3 +41,16 @@ export function joinRemotePath(dir: string, name: string): string {
   const trimmed = dir.trim() || '/data/local/tmp/';
   return `${trimmed.replace(/\/+$/u, '')}/${name}`;
 }
+
+export function parentRemotePath(path: string): string {
+  const trimmed = path.replace(/\/+$/u, '');
+  if (!trimmed || trimmed === '/') {
+    return '/';
+  }
+  const index = trimmed.lastIndexOf('/');
+  return index <= 0 ? '/' : trimmed.slice(0, index);
+}
+
+export function shellQuote(value: string): string {
+  return `'${value.replaceAll("'", `'\\''`)}'`;
+}

@@ -1,51 +1,35 @@
 .page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
   width: min(1440px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 20px 0 48px;
+  padding: 16px 0 48px;
 }
 
-.dashboard {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 16px;
+.panels {
+  display: block;
 }
 
-.terminal {
-  grid-column: span 8;
-  grid-row: span 2;
-  min-height: 660px;
+.panelShown {
+  display: block;
 }
 
-.device {
-  grid-column: span 4;
-}
-
-.install {
-  grid-column: span 4;
-}
-
-.transfer {
-  grid-column: 1 / -1;
-}
-
-@media (max-width: 1024px) {
-  .terminal,
-  .device,
-  .install,
-  .transfer {
-    grid-column: 1 / -1;
-    grid-row: auto;
-    min-height: 0;
-  }
-
-  .terminal {
-    min-height: 560px;
-  }
+.gone {
+  display: none !important;
 }
 
 .footer {
-  margin-top: 28px;
+  margin-top: 14px;
   color: var(--muted);
   font-size: 12px;
   text-align: center;
+}
+
+@media (max-width: 720px) {
+  .page {
+    gap: 10px;
+    width: calc(100% - 20px);
+    padding: 10px 0 32px;
+  }
 }

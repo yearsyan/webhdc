@@ -44,3 +44,14 @@
 .panelTerminal h2 {
   color: #e6ebf2;
 }
+
+@media (max-width: 720px) {
+  .panel {
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  .heading {
+    margin-bottom: 12px;
+  }
+}

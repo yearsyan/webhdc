@@ -1,0 +1,312 @@
+.panel {
+  min-height: 480px;
+}
+
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.crumbRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.upButton {
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.refreshButton {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 16px;
+}
+
+.crumbs {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 1px;
+  min-width: 0;
+  padding: 2px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  scrollbar-width: none;
+}
+
+.crumbs::-webkit-scrollbar {
+  display: none;
+}
+
+.crumbItem {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.crumb {
+  padding: 4px 7px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  max-width: 220px;
+}
+
+.crumb:hover:not(:disabled) {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.crumb:disabled {
+  cursor: default;
+}
+
+.crumb.current {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.sep {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.actionRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pathForm {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chipBtn {
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 11px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.chipBtn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.chipBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: opacity 0.15s;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.table th {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 4px 12px;
+  border-top: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.table tbody tr:first-child td {
+  border-top: 0;
+}
+
+.table tbody tr:hover {
+  background: var(--surface-2);
+}
+
+.nameBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nameBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.nameBtn:hover:not(:disabled) .name {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.fileIcon {
+  flex-shrink: 0;
+  font-size: 13px;
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.colSize,
+.colTime {
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.colActions {
+  width: 1%;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.miniBtn {
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 11.5px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.miniBtn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.miniBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.miniBtn + .miniBtn {
+  margin-left: 6px;
+}
+
+.miniBtnDanger:hover:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.stateRow {
+  padding: 28px 12px;
+  color: var(--muted);
+  font-size: 12.5px;
+  text-align: center;
+}
+
+.errText {
+  color: var(--danger);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.statusLine {
+  margin-top: 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.statusOk {
+  color: var(--ok);
+}
+
+.statusErr {
+  color: var(--danger);
+}
+
+@media (max-width: 720px) {
+  .panel {
+    min-height: 0;
+  }
+
+  .colSize,
+  .colTime {
+    display: none;
+  }
+
+  .pathForm {
+    flex-basis: 100%;
+    order: 2;
+  }
+
+  .actionRow {
+    gap: 6px;
+  }
+
+  .crumb {
+    max-width: 140px;
+  }
+}

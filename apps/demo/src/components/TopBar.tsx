@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { HdcClient } from '@webhdc/core';
 import { useHdc } from '../hdc/HdcProvider';
 import { formatError } from '../utils/format';
+import { DevicePopover } from './DevicePopover';
 import shared from '../styles/shared.module.css';
 import styles from './TopBar.module.css';
 
@@ -70,9 +71,25 @@ export function TopBar() {
               {error}
             </span>
           )}
-          <span className={styles.statusPill}>
-            <span className={styles.dot} data-state={dotState} aria-hidden="true" />
-            {status.message}
+          <span className={styles.statusWrap}>
+            <span
+              className={`${styles.statusPill} ${connected ? styles.statusPillHoverable : ''}`.trim()}
+              tabIndex={connected ? 0 : undefined}
+              aria-label={connected ? `${status.message}，悬停查看设备详情` : undefined}
+            >
+              <span className={styles.dot} data-state={dotState} aria-hidden="true" />
+              {status.message}
+              {connected && (
+                <span className={styles.pillCaret} aria-hidden="true">
+                  ▾
+                </span>
+              )}
+            </span>
+            {connected && (
+              <div className={styles.popover} role="tooltip">
+                <DevicePopover />
+              </div>
+            )}
           </span>
           {connected ? (
             <button

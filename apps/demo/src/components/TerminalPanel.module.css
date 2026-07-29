@@ -152,4 +152,13 @@
     flex-basis: 100%;
     order: 3;
   }
+
+  .termHost {
+    min-height: 300px;
+  }
+
+  .viewport {
+    margin-bottom: 10px;
+    padding: 6px 4px 6px 8px;
+  }
 }
