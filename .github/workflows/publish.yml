@@ -1,0 +1,57 @@
+name: Publish @webhdc/core to npm
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        # reads packageManager from root package.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Verify tag matches package version
+        run: |
+          VERSION=$(node -p "require('./packages/webhdc/package.json').version")
+          TAG=${GITHUB_REF#refs/tags/v}
+          if [ "$VERSION" != "$TAG" ]; then
+            echo "Tag v$TAG does not match packages/webhdc/package.json version $VERSION"
+            exit 1
+          fi
+          echo "Publishing @webhdc/core@$VERSION from tag v$TAG"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint and typecheck
+        run: |
+          pnpm run lint
+          pnpm run typecheck
+
+      - name: Test @webhdc/core
+        run: pnpm --filter @webhdc/core test
+
+      - name: Build @webhdc/core
+        run: pnpm --filter @webhdc/core build
+
+      - name: Publish to npm
+        working-directory: packages/webhdc
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
