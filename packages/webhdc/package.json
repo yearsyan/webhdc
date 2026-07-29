@@ -24,6 +24,16 @@
     "webusb"
   ],
   "license": "Apache-2.0",
+  "author": "yearsyan",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yearsyan/webhdc.git",
+    "directory": "packages/webhdc"
+  },
+  "bugs": {
+    "url": "https://github.com/yearsyan/webhdc/issues"
+  },
+  "homepage": "https://github.com/yearsyan/webhdc/tree/main/packages/webhdc",
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -33,6 +43,9 @@
   "devDependencies": {
     "tsup": "^8.5.0",
     "tsx": "^4.19.0"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "engines": {
     "node": ">=20"
