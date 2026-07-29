@@ -24,7 +24,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          registry-url: 'https://registry.npmjs.org'
+          # 注意：使用 npm Trusted Publishing 时，不要设置 registry-url + NODE_AUTH_TOKEN，
+          # 否则 npm CLI 会优先使用长期 token，而不是 GitHub OIDC 短时令牌。
 
       - name: Verify tag matches package version
         run: |
@@ -50,8 +51,7 @@ jobs:
       - name: Build @webhdc/core
         run: pnpm --filter @webhdc/core build
 
-      - name: Publish to npm
+      - name: Publish to npm with Trusted Publishing
         working-directory: packages/webhdc
+        # npm CLI 会使用 GitHub OIDC token 向 registry 换取一次性发布令牌
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
