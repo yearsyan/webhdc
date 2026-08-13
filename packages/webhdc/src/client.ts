@@ -40,6 +40,7 @@ import type {
   HdcMessage,
   HdcPacket,
   HdcProgress,
+  HdcScreenshotResult,
   HdcShellCloseResult,
   HdcStatusState,
   HdcTransferConfig,
@@ -135,6 +136,29 @@ export interface HdcFileReceiveOptions {
   signal?: AbortSignal;
   writable?: HdcWritable;
   onProgress?: (progress: HdcProgress) => void;
+}
+
+export interface HdcScreenshotOptions {
+  remoteDir?: string;
+  command?: string;
+  keepRemote?: boolean;
+  timeout?: number;
+  signal?: AbortSignal;
+  onProgress?: (progress: HdcProgress) => void;
+}
+
+function imageMimeType(path: string): string {
+  const extension = path.split('.').pop()?.toLowerCase();
+  if (extension === 'png') {
+    return 'image/png';
+  }
+  if (extension === 'webp') {
+    return 'image/webp';
+  }
+  if (extension === 'bmp') {
+    return 'image/bmp';
+  }
+  return 'image/jpeg';
 }
 
 interface HdcShellConstructorOptions {
@@ -520,6 +544,55 @@ export class HdcClient {
     } catch (error) {
       this.#dropChannel(channel, error);
       throw error;
+    }
+  }
+
+  async captureScreenshot({
+    remoteDir = '/data/local/tmp',
+    command = 'snapshot_display',
+    keepRemote = false,
+    timeout = DEFAULT_OPERATION_TIMEOUT,
+    signal,
+    onProgress,
+  }: HdcScreenshotOptions = {}): Promise<HdcScreenshotResult> {
+    this.#assertConnected();
+    const name = `hdc-web-screenshot-${Date.now()}.jpeg`;
+    const remotePath = `${remoteDir.replace(/\/+$/u, '')}/${name}`;
+    const execResult = await this.exec(`${command} -f ${quoteHdcArgument(remotePath)}`, {
+      timeout,
+      signal,
+    });
+    const stdout = execResult.stdout.trim();
+    const failMessage = execResult.messages.find((message) => message.level === MESSAGE_LEVEL.FAIL);
+    if (failMessage) {
+      throw new HdcError(failMessage.text.trim() || '设备截屏命令执行失败', {
+        code: 'HDC_SCREENSHOT_FAILED',
+      });
+    }
+    if (/fail|error/iu.test(stdout)) {
+      throw new HdcError(`设备截屏命令执行失败：${stdout}`, { code: 'HDC_SCREENSHOT_FAILED' });
+    }
+    try {
+      const file = await this.receiveFile(remotePath, { timeout, signal, onProgress });
+      const blob =
+        file.data && typeof Blob !== 'undefined'
+          ? new Blob([Uint8Array.from(file.data)], { type: imageMimeType(remotePath) })
+          : file.blob;
+      return {
+        name,
+        remotePath,
+        size: file.size,
+        data: file.data,
+        blob,
+        stdout,
+        messages: [...execResult.messages, ...file.messages],
+      };
+    } finally {
+      if (!keepRemote) {
+        await this.exec(`rm -f ${quoteHdcArgument(remotePath)}`, { timeout: 10_000 }).catch(() => {
+          // 尽力清理设备上的临时截图文件，清理失败不影响主流程
+        });
+      }
     }
   }
 

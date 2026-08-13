@@ -5,6 +5,7 @@ import {
   type HdcExecResult,
   type HdcFileReceiveResult,
   type HdcFileSendResult,
+  type HdcScreenshotResult,
   type HdcUsbApi,
 } from '@webhdc/core';
 
@@ -38,8 +39,13 @@ async function exercisePublicApi(): Promise<void> {
   const command: HdcExecResult = await client.exec('param get const.product.model');
   const sent: HdcFileSendResult = await client.sendFile(upload, '/data/local/tmp/example.hap');
   const received: HdcFileReceiveResult = await client.receiveFile(sent.remotePath);
+  const shot: HdcScreenshotResult = await client.captureScreenshot({
+    onProgress({ transferred, total, ratio }) {
+      void [transferred, total, ratio];
+    },
+  });
 
-  void [info, command.stdout, received.blob];
+  void [info, command.stdout, received.blob, shot.blob];
   await client.disconnect();
 }
 

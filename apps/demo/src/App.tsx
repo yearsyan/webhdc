@@ -4,6 +4,7 @@ import { TABS, useHashRoute, type TabId } from './router';
 import { AppsPanel } from './components/AppsPanel';
 import { EmptyState } from './components/EmptyState';
 import { FileBrowserPanel } from './components/FileBrowserPanel';
+import { ScreenshotPanel } from './components/ScreenshotPanel';
 import { TabNav } from './components/TabNav';
 import { TerminalPanel } from './components/TerminalPanel';
 import { TopBar } from './components/TopBar';
@@ -14,6 +15,7 @@ const PANELS: ReadonlyArray<{ id: TabId; render: () => ReactNode }> = [
   { id: 'terminal', render: () => <TerminalPanel /> },
   { id: 'files', render: () => <FileBrowserPanel /> },
   { id: 'transfer', render: () => <TransferPanel /> },
+  { id: 'screenshot', render: () => <ScreenshotPanel /> },
   { id: 'apps', render: () => <AppsPanel /> },
 ];
 

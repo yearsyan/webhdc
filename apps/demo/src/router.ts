@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export type TabId = 'terminal' | 'files' | 'transfer' | 'apps';
+export type TabId = 'terminal' | 'files' | 'transfer' | 'screenshot' | 'apps';
 
 export interface TabDef {
   id: TabId;
@@ -22,6 +22,12 @@ export const TABS: readonly TabDef[] = [
     hash: '#/transfer',
     label: '文件传输',
     desc: '向设备发送文件，或从设备下载文件',
+  },
+  {
+    id: 'screenshot',
+    hash: '#/screenshot',
+    label: '屏幕截图',
+    desc: '抓取设备屏幕画面，预览并下载',
   },
   { id: 'apps', hash: '#/apps', label: '应用管理', desc: '安装 HAP、查看已安装应用与卸载' },
 ];

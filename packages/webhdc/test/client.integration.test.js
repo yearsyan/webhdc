@@ -22,7 +22,7 @@ class FakeHdcDevice {
   #outgoingHeader = null;
   #sessionId = 0;
 
-  constructor() {
+  constructor({ fileContent } = {}) {
     this.opened = false;
     this.configuration = null;
     this.configurations = [{ configurationValue: 1 }];
@@ -31,6 +31,8 @@ class FakeHdcDevice {
     this.productName = 'Fake HDC Device';
     this.vendorId = 0x12d1;
     this.productId = 0x5000;
+    this.fileContent = fileContent ?? Uint8Array.of(0x61, 0x62, 0x63);
+    this.execCommands = [];
   }
 
   async open() {
@@ -141,13 +143,24 @@ class FakeHdcDevice {
       return;
     }
 
+    if (packet.command === COMMAND.UNITY_EXECUTE) {
+      const command = new TextDecoder().decode(packet.data);
+      this.execCommands.push(command);
+      const output = command.startsWith('snapshot_display')
+        ? `snapshot success, write to file: ${command.split(' ').at(-1)}`
+        : '';
+      this.#sendPacket(packet.channelId, COMMAND.KERNEL_ECHO_RAW, new TextEncoder().encode(output));
+      this.#sendPacket(packet.channelId, COMMAND.KERNEL_CHANNEL_CLOSE, Uint8Array.of(1));
+      return;
+    }
+
     if (packet.command === COMMAND.FILE_INIT) {
       this.#sendPacket(packet.channelId, COMMAND.KERNEL_WAKEUP_SLAVE_TASK);
       this.#sendPacket(
         packet.channelId,
         COMMAND.FILE_CHECK,
         encodeTransferConfig({
-          fileSize: 3,
+          fileSize: this.fileContent.byteLength,
           path: 'download.bin',
           optionalName: 'download.bin',
         }),
@@ -159,7 +172,7 @@ class FakeHdcDevice {
       this.#sendPacket(
         packet.channelId,
         COMMAND.FILE_DATA,
-        encodeTransferPayload(0, Uint8Array.of(0x61, 0x62, 0x63)),
+        encodeTransferPayload(0, this.fileContent),
       );
       return;
     }
@@ -196,6 +209,33 @@ test('HdcClient completes the receiver-side file finish and close handshake', as
   assert.deepEqual(result.data, Uint8Array.of(0x61, 0x62, 0x63));
   assert.equal(result.size, 3);
   assert.equal(result.name, 'download.bin');
+
+  await client.disconnect();
+});
+
+test('HdcClient captures a screenshot via shell command and pulls it back', async () => {
+  const jpegBytes = Uint8Array.of(0xff, 0xd8, 0xff, 0xe0, 0x01, 0x02, 0xff, 0xd9);
+  const device = new FakeHdcDevice({ fileContent: jpegBytes });
+  const client = new HdcClient({
+    usb: {
+      getDevices: async () => [device],
+      requestDevice: async () => device,
+    },
+  });
+
+  await client.connect(device);
+  const result = await client.captureScreenshot();
+
+  assert.equal(result.size, jpegBytes.byteLength);
+  assert.deepEqual(result.data, jpegBytes);
+  assert.match(result.name, /^hdc-web-screenshot-\d+\.jpeg$/u);
+  assert.equal(result.remotePath, `/data/local/tmp/${result.name}`);
+  assert.match(result.stdout, /snapshot success/u);
+  assert.equal(result.blob?.type, 'image/jpeg');
+
+  const [snapshotCommand, cleanupCommand] = device.execCommands;
+  assert.match(snapshotCommand, /^snapshot_display -f \/data\/local\/tmp\//u);
+  assert.equal(cleanupCommand, `rm -f ${result.remotePath}`);
 
   await client.disconnect();
 });

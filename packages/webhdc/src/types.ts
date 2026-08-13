@@ -156,6 +156,16 @@ export interface HdcWritable {
   getWriter(): WritableStreamDefaultWriter<Uint8Array>;
 }
 
+export interface HdcScreenshotResult {
+  name: string;
+  remotePath: string;
+  size: number;
+  data: Uint8Array | null;
+  blob: Blob | null;
+  stdout: string;
+  messages: HdcMessage[];
+}
+
 export type HdcLogLevel = 'debug' | 'info' | 'error';
 
 export type HdcStatusState =

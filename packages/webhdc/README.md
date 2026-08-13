@@ -96,6 +96,26 @@ await client.receiveFile('/data/local/tmp/large.bin', {
 });
 ```
 
+## 屏幕截图
+
+`captureScreenshot` 先在设备上执行 `snapshot_display` 截屏命令，再把生成的
+图片拉取到浏览器内存，最后尽力清理设备上的临时文件：
+
+```ts
+const shot = await client.captureScreenshot({
+  onProgress({ transferred, total, ratio }) {
+    console.log(transferred, total, ratio);
+  },
+});
+
+const url = URL.createObjectURL(shot.blob); // image/jpeg
+console.log(shot.name, shot.size, shot.data);
+```
+
+可通过 `remoteDir`（默认 `/data/local/tmp`）、`command`（默认
+`snapshot_display`）、`keepRemote`（保留设备上的截图文件）与 `signal`
+调整行为。
+
 ## 取消与断开
 
 `exec`、`openShell`、`sendFile` 和 `receiveFile` 均支持 `AbortSignal`。完成后调用：

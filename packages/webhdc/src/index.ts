@@ -25,6 +25,7 @@ export type {
   HdcFileReceiveOptions,
   HdcFileSendOptions,
   HdcRequestDeviceOptions,
+  HdcScreenshotOptions,
   HdcShellOptions,
 } from './client.js';
 export type { HdcTransportOptions } from './usb-transport.js';
@@ -46,6 +47,7 @@ export type {
   HdcPacket,
   HdcPayloadProtect,
   HdcProgress,
+  HdcScreenshotResult,
   HdcShellCloseResult,
   HdcStatus,
   HdcStatusState,
