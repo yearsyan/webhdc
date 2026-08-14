@@ -24,10 +24,32 @@ export type {
   HdcExecOptions,
   HdcFileReceiveOptions,
   HdcFileSendOptions,
+  HdcForwardOptions,
   HdcRequestDeviceOptions,
   HdcScreenshotOptions,
   HdcShellOptions,
 } from './client.js';
+export {
+  FORWARD_ENDPOINT_TYPES,
+  FORWARD_PARAMETER_SIZE,
+  HdcForward,
+  HdcForwardStream,
+  decodeForwardCheckResult,
+  decodeForwardContextId,
+  decodeForwardData,
+  decodeForwardRequest,
+  encodeForwardContextId,
+  encodeForwardData,
+  encodeForwardFreeContext,
+  encodeForwardRequest,
+  parseForwardEndpoint,
+} from './forward.js';
+export type {
+  HdcForwardConstructorOptions,
+  HdcForwardEndpoint,
+  HdcForwardEndpointType,
+  HdcForwardStreamOptions,
+} from './forward.js';
 export type { HdcTransportOptions } from './usb-transport.js';
 export type {
   HdcAuthorizationRequest,

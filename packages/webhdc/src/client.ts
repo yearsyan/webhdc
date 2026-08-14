@@ -14,6 +14,17 @@ import { HdcKeyStore, defaultHostName } from './auth.js';
 import { Emitter } from './emitter.js';
 import { HdcDisconnectedError, HdcError, HdcProtocolError, HdcTimeoutError } from './errors.js';
 import {
+  HdcForward,
+  HdcForwardStream,
+  decodeForwardCheckResult,
+  decodeForwardContextId,
+  decodeForwardData,
+  encodeForwardData,
+  encodeForwardFreeContext,
+  encodeForwardRequest,
+  parseForwardEndpoint,
+} from './forward.js';
+import {
   decodeHandshake,
   decodeHdcPacket,
   decodeTransferConfig,
@@ -52,6 +63,7 @@ import type {
 
 const DEFAULT_OPERATION_TIMEOUT = 30_000;
 const DEFAULT_AUTH_TIMEOUT = 120_000;
+const DEFAULT_FORWARD_HIGH_WATER_MARK = 1024 * 1024;
 
 interface FileSourceOptions {
   name?: string;
@@ -65,7 +77,7 @@ interface FileSource {
   read(start: number, end: number): Promise<Uint8Array>;
 }
 
-type ChannelType = 'exec' | 'shell' | 'file-send' | 'file-receive';
+type ChannelType = 'exec' | 'shell' | 'file-send' | 'file-receive' | 'forward';
 type ChannelResult = HdcExecResult | HdcShellCloseResult | HdcFileSendResult | HdcFileReceiveResult;
 
 interface InternalChannel {
@@ -93,6 +105,34 @@ interface InternalChannel {
   expectedOffset: number;
   config: HdcTransferConfig | null;
   finishRequested: boolean;
+  forward: InternalForward | null;
+}
+
+interface InternalForwardStream {
+  id: number;
+  state: 'connecting' | 'open' | 'closed';
+  opened: Deferred<HdcForwardStream>;
+  closed: Deferred<void>;
+  closeError: Error | null;
+  wrapper: HdcForwardStream | null;
+  chunks: Uint8Array[];
+  buffered: number;
+  dataListeners: Set<(data: Uint8Array) => void>;
+  closeListeners: Set<(error: Error | null) => void>;
+  errorListeners: Set<(error: Error) => void>;
+  highWaterMark: number;
+}
+
+interface InternalForward {
+  channelId: number;
+  remote: string;
+  checkId: number;
+  check: Deferred<void> | null;
+  checkTimer: ReturnType<typeof setTimeout> | null;
+  streams: Map<number, InternalForwardStream>;
+  closed: Deferred<void>;
+  finished: boolean;
+  highWaterMark: number;
 }
 
 export interface HdcClientOptions {
@@ -145,6 +185,14 @@ export interface HdcScreenshotOptions {
   timeout?: number;
   signal?: AbortSignal;
   onProgress?: (progress: HdcProgress) => void;
+}
+
+export interface HdcForwardOptions {
+  /** 等待设备检查远端端点可达的超时时间（毫秒），默认 30s */
+  timeout?: number;
+  signal?: AbortSignal;
+  /** 单条流未消费的接收缓冲上限（字节），默认 1MiB，0 表示不限制 */
+  highWaterMark?: number;
 }
 
 function imageMimeType(path: string): string {
@@ -596,6 +644,82 @@ export class HdcClient {
     }
   }
 
+  /**
+   * 创建一次 forward 会话（对应 hdc fport，本地端为 JS 侧虚拟流）。
+   *
+   * 本地端点不做真实监听：上层每次调用 accept() 相当于一个本地客户端
+   * 接入，返回一条与设备端点连通的 HdcForwardStream 双向字节流。
+   *
+   * remote 支持 `tcp:<port>`、`localabstract:<name>`、`localreserved:<name>`、
+   * `localfilesystem:<name>`、`dev:<path>` 等端点类型。
+   *
+   * @example
+   * const forward = await client.forward('localabstract:webview_devtools_remote_123');
+   * const stream = await forward.accept();
+   * stream.onData((data) => { ... });
+   * await stream.write(new TextEncoder().encode('GET /json HTTP/1.1\r\n'));
+   */
+  async forward(
+    remote: string,
+    {
+      timeout = DEFAULT_OPERATION_TIMEOUT,
+      signal,
+      highWaterMark = DEFAULT_FORWARD_HIGH_WATER_MARK,
+    }: HdcForwardOptions = {},
+  ): Promise<HdcForward> {
+    this.#assertConnected();
+    parseForwardEndpoint(remote);
+    const channel = this.#createChannel('forward', 0, signal);
+    channel.chunks = [];
+    channel.messages = [];
+    const forward: InternalForward = {
+      channelId: channel.id,
+      remote,
+      checkId: randomUint32() || 1,
+      check: deferred<void>(),
+      checkTimer: null,
+      streams: new Map(),
+      closed: deferred<void>(),
+      finished: false,
+      highWaterMark: Math.max(0, highWaterMark),
+    };
+    channel.forward = forward;
+    void channel.deferred.promise.then(
+      () => this.#finishForward(forward, undefined),
+      (error: unknown) => this.#finishForward(forward, error),
+    );
+    try {
+      await this.#sendCommand(
+        channel.id,
+        COMMAND.FORWARD_CHECK,
+        encodeForwardRequest(forward.checkId, remote),
+      );
+      if (Number.isFinite(timeout) && timeout > 0) {
+        forward.checkTimer = setTimeout(() => {
+          const error = new HdcTimeoutError('等待设备 forward 检查结果超时');
+          forward.check?.reject(error);
+          forward.check = null;
+          this.#dropChannel(channel, error);
+          this.#requestChannelClose(channel).catch(() => {});
+        }, timeout);
+      }
+      await (forward.check?.promise ?? Promise.resolve());
+      return new HdcForward({
+        channelId: channel.id,
+        remote,
+        closed: forward.closed.promise,
+        accept: () => this.#acceptForward(forward),
+        close: async () => {
+          await this.#requestChannelClose(channel).catch(() => {});
+          await forward.closed.promise.catch(() => {});
+        },
+      });
+    } catch (error) {
+      this.#dropChannel(channel, error);
+      throw error;
+    }
+  }
+
   #makeTransport(sessionId: number): HdcWebUsbTransport {
     return new HdcWebUsbTransport({
       usb: this.#usb,
@@ -775,6 +899,10 @@ export class HdcClient {
       await this.#finishChannel(channel);
       return;
     }
+    if (channel.type === 'forward') {
+      await this.#handleForwardPacket(channel, packet);
+      return;
+    }
     if (channel.type === 'file-send') {
       await this.#handleFileSend(channel, packet);
       return;
@@ -912,6 +1040,285 @@ export class HdcClient {
     }
   }
 
+  async #acceptForward(forward: InternalForward): Promise<HdcForwardStream> {
+    const channel = this.#channels.get(forward.channelId);
+    if (!channel || !this.#transport) {
+      throw new HdcDisconnectedError('forward 已关闭');
+    }
+    let id = randomUint32() || 1;
+    while (forward.streams.has(id)) {
+      id = randomUint32() || 1;
+    }
+    const stream: InternalForwardStream = {
+      id,
+      state: 'connecting',
+      opened: deferred<HdcForwardStream>(),
+      closed: deferred<void>(),
+      closeError: null,
+      wrapper: null,
+      chunks: [],
+      buffered: 0,
+      dataListeners: new Set(),
+      closeListeners: new Set(),
+      errorListeners: new Set(),
+      highWaterMark: forward.highWaterMark,
+    };
+    forward.streams.set(id, stream);
+    await this.#sendCommand(
+      channel.id,
+      COMMAND.FORWARD_ACTIVE_SLAVE,
+      encodeForwardRequest(id, forward.remote),
+    );
+    return stream.opened.promise;
+  }
+
+  async #handleForwardPacket(channel: InternalChannel, packet: HdcPacket): Promise<void> {
+    const forward = channel.forward;
+    if (!forward) {
+      return;
+    }
+    if (packet.command === COMMAND.FORWARD_CHECK_RESULT) {
+      const { id, success } = decodeForwardCheckResult(packet.data);
+      if (id !== forward.checkId || !forward.check) {
+        await this.#sendCommand(
+          channel.id,
+          COMMAND.FORWARD_FREE_CONTEXT,
+          encodeForwardFreeContext(id),
+        ).catch(() => {});
+        return;
+      }
+      const check = forward.check;
+      forward.check = null;
+      if (forward.checkTimer !== null) {
+        clearTimeout(forward.checkTimer);
+        forward.checkTimer = null;
+      }
+      if (success) {
+        check.resolve();
+      } else {
+        const error = new HdcError(`设备无法连接 forward 端点 ${forward.remote}`, {
+          code: 'HDC_FORWARD_CHECK_FAILED',
+        });
+        check.reject(error);
+        this.#dropChannel(channel, error);
+        this.#requestChannelClose(channel).catch(() => {});
+      }
+      return;
+    }
+    if (packet.command === COMMAND.FORWARD_ACTIVE_MASTER) {
+      const id = decodeForwardContextId(packet.data);
+      const stream = forward.streams.get(id);
+      if (!stream || stream.state !== 'connecting') {
+        await this.#sendCommand(
+          channel.id,
+          COMMAND.FORWARD_FREE_CONTEXT,
+          encodeForwardFreeContext(id),
+        ).catch(() => {});
+        return;
+      }
+      stream.state = 'open';
+      stream.wrapper = new HdcForwardStream({
+        contextId: id,
+        remote: forward.remote,
+        closed: stream.closed.promise,
+        write: (data) => this.#writeForwardStream(channel, stream, data),
+        close: () => this.#closeForwardStream(channel, forward, stream, null),
+        onData: (listener) => {
+          stream.dataListeners.add(listener);
+          this.#flushForwardStream(stream);
+          return () => stream.dataListeners.delete(listener);
+        },
+        onClose: (listener) => {
+          stream.closeListeners.add(listener);
+          if (stream.state === 'closed') {
+            queueMicrotask(() => listener(stream.closeError));
+          }
+          return () => stream.closeListeners.delete(listener);
+        },
+        onError: (listener) => {
+          stream.errorListeners.add(listener);
+          return () => stream.errorListeners.delete(listener);
+        },
+      });
+      stream.opened.resolve(stream.wrapper);
+      return;
+    }
+    if (packet.command === COMMAND.FORWARD_DATA) {
+      const { id, data } = decodeForwardData(packet.data);
+      const stream = forward.streams.get(id);
+      if (!stream || stream.state === 'closed') {
+        await this.#sendCommand(
+          channel.id,
+          COMMAND.FORWARD_FREE_CONTEXT,
+          encodeForwardFreeContext(id),
+        ).catch(() => {});
+        return;
+      }
+      this.#deliverForwardData(channel, forward, stream, data);
+      return;
+    }
+    if (packet.command === COMMAND.FORWARD_FREE_CONTEXT) {
+      const id = decodeForwardContextId(packet.data);
+      const stream = forward.streams.get(id);
+      if (stream) {
+        await this.#closeForwardStream(channel, forward, stream, null, true);
+      }
+    }
+  }
+
+  #deliverForwardData(
+    channel: InternalChannel,
+    forward: InternalForward,
+    stream: InternalForwardStream,
+    data: Uint8Array,
+  ): void {
+    if (stream.state === 'closed') {
+      return;
+    }
+    if (stream.dataListeners.size > 0 && stream.chunks.length === 0) {
+      this.#emitForwardData(stream, data);
+      return;
+    }
+    if (stream.highWaterMark > 0 && stream.buffered + data.byteLength > stream.highWaterMark) {
+      const error = new HdcError(`forward 流接收缓冲超过 ${stream.highWaterMark} 字节`, {
+        code: 'HDC_FORWARD_OVERFLOW',
+      });
+      void this.#closeForwardStream(channel, forward, stream, error);
+      return;
+    }
+    stream.chunks.push(data);
+    stream.buffered += data.byteLength;
+  }
+
+  #emitForwardData(stream: InternalForwardStream, data: Uint8Array): void {
+    for (const listener of stream.dataListeners) {
+      try {
+        listener(data);
+      } catch (error) {
+        queueMicrotask(() => {
+          throw error;
+        });
+      }
+    }
+  }
+
+  #flushForwardStream(stream: InternalForwardStream): void {
+    while (stream.chunks.length > 0 && stream.dataListeners.size > 0) {
+      const data = stream.chunks.shift();
+      if (!data) {
+        break;
+      }
+      stream.buffered -= data.byteLength;
+      this.#emitForwardData(stream, data);
+    }
+  }
+
+  #isForwardStreamClosed(stream: InternalForwardStream): boolean {
+    return stream.state === 'closed';
+  }
+
+  async #writeForwardStream(
+    channel: InternalChannel,
+    stream: InternalForwardStream,
+    data: Uint8Array,
+  ): Promise<number> {
+    if (this.#isForwardStreamClosed(stream)) {
+      throw new HdcError('forward 流已关闭', { code: 'HDC_FORWARD_CLOSED' });
+    }
+    if (!this.#connected || !this.#transport) {
+      throw new HdcDisconnectedError();
+    }
+    const chunkSize = HDC.MAX_HDC_PAYLOAD_SIZE - HDC.PAYLOAD_HEADER_SIZE - 64;
+    for (let offset = 0; offset < data.byteLength; offset += chunkSize) {
+      if (this.#isForwardStreamClosed(stream)) {
+        // 写入期间流可能被设备侧异步关闭
+        throw new HdcError('forward 流已关闭', { code: 'HDC_FORWARD_CLOSED' });
+      }
+      const end = Math.min(offset + chunkSize, data.byteLength);
+      await this.#sendCommand(
+        channel.id,
+        COMMAND.FORWARD_DATA,
+        encodeForwardData(stream.id, data.subarray(offset, end)),
+      );
+    }
+    return data.byteLength;
+  }
+
+  async #closeForwardStream(
+    channel: InternalChannel,
+    forward: InternalForward,
+    stream: InternalForwardStream,
+    error: Error | null,
+    remoteInitiated = false,
+  ): Promise<void> {
+    if (stream.state === 'closed') {
+      return;
+    }
+    if (!remoteInitiated && this.#channels.has(channel.id) && this.#transport) {
+      await this.#sendCommand(
+        channel.id,
+        COMMAND.FORWARD_FREE_CONTEXT,
+        encodeForwardFreeContext(stream.id),
+      ).catch(() => {});
+    }
+    this.#settleForwardStream(forward, stream, error);
+  }
+
+  #settleForwardStream(
+    forward: InternalForward,
+    stream: InternalForwardStream,
+    error: Error | null,
+  ): void {
+    if (stream.state === 'closed') {
+      return;
+    }
+    stream.state = 'closed';
+    stream.closeError = error;
+    forward.streams.delete(stream.id);
+    stream.chunks = [];
+    stream.buffered = 0;
+    if (error) {
+      for (const listener of [...stream.errorListeners]) {
+        try {
+          listener(error);
+        } catch (caught) {
+          queueMicrotask(() => {
+            throw caught;
+          });
+        }
+      }
+    }
+    for (const listener of [...stream.closeListeners]) {
+      try {
+        listener(error);
+      } catch (caught) {
+        queueMicrotask(() => {
+          throw caught;
+        });
+      }
+    }
+    stream.opened.reject(error ?? new HdcDisconnectedError('forward 流已关闭'));
+    stream.closed.resolve();
+  }
+
+  #finishForward(forward: InternalForward, reason: unknown): void {
+    if (forward.finished) {
+      return;
+    }
+    forward.finished = true;
+    if (forward.checkTimer !== null) {
+      clearTimeout(forward.checkTimer);
+      forward.checkTimer = null;
+    }
+    const error = reason instanceof Error ? reason : new HdcDisconnectedError('forward 已关闭');
+    forward.check?.reject(error);
+    forward.check = null;
+    for (const stream of [...forward.streams.values()]) {
+      this.#settleForwardStream(forward, stream, error);
+    }
+    forward.closed.resolve();
+  }
+
   #createChannel(type: ChannelType, timeout: number, signal?: AbortSignal): InternalChannel {
     if (signal?.aborted) {
       throw signal.reason instanceof Error
@@ -948,6 +1355,7 @@ export class HdcClient {
       expectedOffset: 0,
       config: null,
       finishRequested: false,
+      forward: null,
     };
     this.#channels.set(id, channel);
     if (Number.isFinite(timeout) && timeout > 0) {
@@ -1010,7 +1418,7 @@ export class HdcClient {
       });
       return;
     }
-    if (channel.type === 'shell') {
+    if (channel.type === 'shell' || channel.type === 'forward') {
       channel.deferred.resolve({ channelId: channel.id });
       return;
     }

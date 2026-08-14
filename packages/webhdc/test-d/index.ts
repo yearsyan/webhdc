@@ -5,6 +5,8 @@ import {
   type HdcExecResult,
   type HdcFileReceiveResult,
   type HdcFileSendResult,
+  type HdcForward,
+  type HdcForwardStream,
   type HdcScreenshotResult,
   type HdcUsbApi,
 } from '@webhdc/core';
@@ -45,7 +47,24 @@ async function exercisePublicApi(): Promise<void> {
     },
   });
 
-  void [info, command.stdout, received.blob, shot.blob];
+  // DevTools 场景：Fake WebSocket 只需要一条双向字节流
+  const forward: HdcForward = await client.forward('localabstract:webview_devtools_remote_123', {
+    highWaterMark: 4 * 1024 * 1024,
+  });
+  const stream: HdcForwardStream = await forward.accept();
+  const unsubscribeData = stream.onData((data) => {
+    void data.byteLength;
+  });
+  const unsubscribeClose = stream.onClose((error) => {
+    void error;
+  });
+  const written: number = await stream.write(new TextEncoder().encode('GET /json HTTP/1.1\r\n'));
+  await stream.close();
+  unsubscribeData();
+  unsubscribeClose();
+  await forward.close();
+
+  void [info, command.stdout, received.blob, shot.blob, written];
   await client.disconnect();
 }
 

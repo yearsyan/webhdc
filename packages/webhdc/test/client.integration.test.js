@@ -4,6 +4,14 @@ import test from 'node:test';
 import { HdcClient } from '../src/index.ts';
 import { AUTH_TLV, AUTH_TYPE, COMMAND, USB_OPTION } from '../src/constants.ts';
 import {
+  decodeForwardContextId,
+  decodeForwardData,
+  decodeForwardRequest,
+  encodeForwardContextId,
+  encodeForwardData,
+} from '../src/forward.ts';
+import { concatBytes } from '../src/bytes.ts';
+import {
   decodeHandshake,
   decodeHdcPacket,
   decodeUsbHeader,
@@ -22,7 +30,7 @@ class FakeHdcDevice {
   #outgoingHeader = null;
   #sessionId = 0;
 
-  constructor({ fileContent } = {}) {
+  constructor({ fileContent, forwardCheckOk = true } = {}) {
     this.opened = false;
     this.configuration = null;
     this.configurations = [{ configurationValue: 1 }];
@@ -33,6 +41,11 @@ class FakeHdcDevice {
     this.productId = 0x5000;
     this.fileContent = fileContent ?? Uint8Array.of(0x61, 0x62, 0x63);
     this.execCommands = [];
+    this.forwardCheckOk = forwardCheckOk;
+    this.forwardChannelId = null;
+    this.forwardEndpoint = null;
+    this.forwardActive = [];
+    this.forwardData = [];
   }
 
   async open() {
@@ -121,6 +134,14 @@ class FakeHdcDevice {
     this.#enqueue(packet);
   }
 
+  closeForwardStream(contextId) {
+    this.#sendPacket(
+      this.forwardChannelId,
+      COMMAND.FORWARD_FREE_CONTEXT,
+      encodeForwardContextId(contextId),
+    );
+  }
+
   #handlePacket(packet) {
     if (packet.command === COMMAND.KERNEL_HANDSHAKE) {
       const request = decodeHandshake(packet.data);
@@ -140,6 +161,42 @@ class FakeHdcDevice {
         }),
       );
       this.#sendPacket(0, COMMAND.KERNEL_CHANNEL_CLOSE, Uint8Array.of(1));
+      return;
+    }
+
+    if (packet.command === COMMAND.FORWARD_CHECK) {
+      const { id, endpoint } = decodeForwardRequest(packet.data);
+      this.forwardChannelId = packet.channelId;
+      this.forwardEndpoint = endpoint;
+      this.#sendPacket(
+        packet.channelId,
+        COMMAND.FORWARD_CHECK_RESULT,
+        concatBytes(encodeForwardContextId(id), Uint8Array.of(this.forwardCheckOk ? 1 : 0)),
+      );
+      return;
+    }
+
+    if (packet.command === COMMAND.FORWARD_ACTIVE_SLAVE) {
+      const { id, endpoint } = decodeForwardRequest(packet.data);
+      this.forwardActive.push({ id, endpoint });
+      this.#sendPacket(packet.channelId, COMMAND.FORWARD_ACTIVE_MASTER, encodeForwardContextId(id));
+      return;
+    }
+
+    if (packet.command === COMMAND.FORWARD_DATA) {
+      const { id, data } = decodeForwardData(packet.data);
+      this.forwardData.push({ id, text: new TextDecoder().decode(data) });
+      // echo server: 模拟设备端 socket 回显
+      this.#sendPacket(packet.channelId, COMMAND.FORWARD_DATA, encodeForwardData(id, data));
+      return;
+    }
+
+    if (packet.command === COMMAND.FORWARD_FREE_CONTEXT) {
+      this.#sendPacket(
+        packet.channelId,
+        COMMAND.FORWARD_FREE_CONTEXT,
+        encodeForwardContextId(decodeForwardContextId(packet.data)),
+      );
       return;
     }
 
@@ -210,6 +267,86 @@ test('HdcClient completes the receiver-side file finish and close handshake', as
   assert.equal(result.size, 3);
   assert.equal(result.name, 'download.bin');
 
+  await client.disconnect();
+});
+
+test('HdcClient forwards a virtual stream to a device abstract socket', async () => {
+  const device = new FakeHdcDevice();
+  const client = new HdcClient({
+    usb: {
+      getDevices: async () => [device],
+      requestDevice: async () => device,
+    },
+  });
+
+  await client.connect(device);
+
+  const forward = await client.forward('localabstract:webview_devtools_remote_123');
+  assert.equal(forward.remote, 'localabstract:webview_devtools_remote_123');
+  assert.equal(device.forwardEndpoint, 'localabstract:webview_devtools_remote_123');
+
+  const stream = await forward.accept();
+  assert.ok(stream.contextId > 0);
+  assert.equal(device.forwardActive.at(-1)?.endpoint, 'localabstract:webview_devtools_remote_123');
+
+  const received = [];
+  const bothReceived = new Promise((resolve) => {
+    stream.onData((data) => {
+      received.push(new TextDecoder().decode(data));
+      if (received.length === 2) {
+        resolve();
+      }
+    });
+  });
+  const closedEvent = new Promise((resolve) => stream.onClose((error) => resolve(error)));
+
+  await stream.write('ping');
+  await stream.write('pong');
+  await bothReceived;
+  assert.deepEqual(received, ['ping', 'pong']);
+  assert.deepEqual(
+    device.forwardData.map((entry) => entry.text),
+    ['ping', 'pong'],
+  );
+
+  // 设备端关闭（例如 webview 退出）
+  device.closeForwardStream(stream.contextId);
+  assert.equal(await closedEvent, null);
+  await stream.closed;
+  await assert.rejects(stream.write('late'), { code: 'HDC_FORWARD_CLOSED' });
+
+  // 关闭整个 forward 会话
+  await forward.close();
+  await forward.closed;
+  await client.disconnect();
+});
+
+test('HdcClient rejects forward when the device cannot reach the endpoint', async () => {
+  const device = new FakeHdcDevice({ forwardCheckOk: false });
+  const client = new HdcClient({
+    usb: {
+      getDevices: async () => [device],
+      requestDevice: async () => device,
+    },
+  });
+
+  await client.connect(device);
+  await assert.rejects(client.forward('tcp:9222'), { code: 'HDC_FORWARD_CHECK_FAILED' });
+  await client.disconnect();
+});
+
+test('HdcClient rejects forward for invalid endpoints', async () => {
+  const device = new FakeHdcDevice();
+  const client = new HdcClient({
+    usb: {
+      getDevices: async () => [device],
+      requestDevice: async () => device,
+    },
+  });
+
+  await client.connect(device);
+  await assert.rejects(client.forward('not-an-endpoint'), { code: 'HDC_FORWARD_INVALID_ENDPOINT' });
+  await assert.rejects(client.forward('udp:53'), { code: 'HDC_FORWARD_UNSUPPORTED_ENDPOINT' });
   await client.disconnect();
 });
 

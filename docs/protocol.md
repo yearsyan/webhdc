@@ -107,3 +107,37 @@ RSA 3072/SHA-512。后续流程：
 
 每个文件数据块预留 64 字节 protobuf 前缀，字段为文件偏移、压缩类型、压缩长度和
 原始长度。当前实现只声明并接受 `COMPRESS_NONE`。
+
+## 端口转发（fport）
+
+`@webhdc/core` 实现了原生 `hdc fport` 的 forward 协议子集（对应上游
+`HdcForwardBase`）。浏览器端扮演 master，daemon 扮演 slave；与原生实现不同，
+本地端点不做真实 TCP/Unix 监听，而是以 JS 侧虚拟 duplex stream 形式暴露
+（`client.forward()` + `forward.accept()`）。
+
+相关命令为 `CMD_FORWARD_*`（2500–2509）。所有 forward 任务命令的 payload 均以
+4 字节大端 context id 开头（对应上游 `htonl(cid)`）：
+
+| 命令                           | 方向         | payload                           |
+| ------------------------------ | ------------ | --------------------------------- |
+| `FORWARD_CHECK` (2501)         | web → daemon | id + 8 字节参数位 + 端点串 + `\0` |
+| `FORWARD_CHECK_RESULT` (2502)  | daemon → web | id + 1 字节标志（1=可达 0=失败）  |
+| `FORWARD_ACTIVE_SLAVE` (2503)  | web → daemon | 同 `FORWARD_CHECK`                |
+| `FORWARD_ACTIVE_MASTER` (2504) | daemon → web | 仅 id（连接成功）                 |
+| `FORWARD_DATA` (2505)          | 双向         | id + 裸字节流                     |
+| `FORWARD_FREE_CONTEXT` (2506)  | 双向         | 仅 id（释放/对端关闭）            |
+
+流程：
+
+1. 浏览器新建一条 channel 并发送 `FORWARD_CHECK`，daemon 尝试连接远端端点。
+2. daemon 回 `FORWARD_CHECK_RESULT`；标志为 0 时 `forward()` 以
+   `HDC_FORWARD_CHECK_FAILED` 拒绝。
+3. 每次 `forward.accept()` 生成新 context id，发送 `FORWARD_ACTIVE_SLAVE`，
+   daemon 建立真实连接并回 `FORWARD_ACTIVE_MASTER`。
+4. 之后双向数据经 `FORWARD_DATA` 中继；任一侧关闭都发送
+   `FORWARD_FREE_CONTEXT`。
+5. `forward.close()` 关闭底层 channel，daemon task 释放全部 context。
+
+支持的远端端点类型：`tcp`、`localabstract`（如
+`webview_devtools_remote_<PID>`）、`localreserved`、`localfilesystem`、`dev`、
+`jdwp`。
