@@ -12,7 +12,7 @@
     "build": "pnpm --filter @webhdc/core build && pnpm --filter @hdc-web/demo build",
     "preview": "pnpm --filter @hdc-web/demo preview",
     "test": "pnpm --filter @webhdc/core test && pnpm --filter @hdc-web/demo test",
-    "typecheck": "pnpm --filter @webhdc/core typecheck && pnpm --filter @hdc-web/demo typecheck",
+    "typecheck": "pnpm --filter @webhdc/core build && pnpm --filter @webhdc/core typecheck && pnpm --filter @hdc-web/demo typecheck",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
