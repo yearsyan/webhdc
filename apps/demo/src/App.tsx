@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { HdcProvider, useHdc } from './hdc/HdcProvider';
 import { TABS, useHashRoute, type TabId } from './router';
 import { AppsPanel } from './components/AppsPanel';
+import { DevtoolsPanel } from './components/DevtoolsPanel';
 import { EmptyState } from './components/EmptyState';
 import { FileBrowserPanel } from './components/FileBrowserPanel';
 import { ScreenshotPanel } from './components/ScreenshotPanel';
@@ -17,6 +18,7 @@ const PANELS: ReadonlyArray<{ id: TabId; render: () => ReactNode }> = [
   { id: 'transfer', render: () => <TransferPanel /> },
   { id: 'screenshot', render: () => <ScreenshotPanel /> },
   { id: 'apps', render: () => <AppsPanel /> },
+  { id: 'devtools', render: () => <DevtoolsPanel /> },
 ];
 
 function Workspace() {

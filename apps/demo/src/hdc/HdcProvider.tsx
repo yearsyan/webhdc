@@ -67,7 +67,8 @@ export function HdcProvider({ children }: { children: ReactNode }) {
   }, [client]);
 
   const connect = useCallback(async () => {
-    const picked = await client.requestDevice();
+    const authorized = await client.getDevices();
+    const picked = authorized.length === 1 ? authorized[0] : await client.requestDevice();
     return client.connect(picked);
   }, [client]);
 

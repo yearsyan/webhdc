@@ -111,7 +111,10 @@ export function decodeForwardRequest(input: ByteInput): { id: number; endpoint: 
 }
 
 /**
- * FORWARD_CHECK_RESULT payload：be32(id) + 1 字节结果标志（1=成功 0=失败）
+ * FORWARD_CHECK_RESULT payload：be32(id) + 1 字节原始状态标志。
+ *
+ * 注意：该字节不能直接判定 forward 是否成功。原生实现会在成功的 libuv
+ * connect status=0 时发送 0，host 侧只把收到结果包本身视为确认。
  */
 export function decodeForwardCheckResult(input: ByteInput): { id: number; success: boolean } {
   const bytes = toUint8Array(input);

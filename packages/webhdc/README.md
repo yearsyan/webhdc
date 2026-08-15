@@ -116,6 +116,27 @@ console.log(shot.name, shot.size, shot.data);
 `snapshot_display`）、`keepRemote`（保留设备上的截图文件）与 `signal`
 调整行为。
 
+## 端口转发
+
+`forward()` 对应 `hdc fport`。浏览器不能创建本地 TCP/Unix listener，因此本地
+端点以虚拟双向流表示；每次 `accept()` 相当于一个本地客户端接入：
+
+```ts
+const forward = await client.forward('localabstract:webview_devtools_remote_38532');
+const stream = await forward.accept();
+
+stream.onData((bytes) => {
+  console.log('device → browser', bytes);
+});
+await stream.write('GET /json/list HTTP/1.1\r\nHost: 127.0.0.1:9222\r\n\r\n');
+
+await stream.close();
+await forward.close();
+```
+
+支持 `tcp`、`localabstract`、`localreserved`、`localfilesystem`、`dev` 与
+`jdwp` 远端端点。`highWaterMark` 可限制单条未消费流的接收缓冲大小。
+
 ## 取消与断开
 
 `exec`、`openShell`、`sendFile` 和 `receiveFile` 均支持 `AbortSignal`。完成后调用：

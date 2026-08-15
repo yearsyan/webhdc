@@ -66,6 +66,36 @@ function TabIcon({ id }: { id: TabId }) {
           <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.4" />
         </svg>
       );
+    case 'screenshot':
+      return (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M8 6.5 9.4 4h5.2L16 6.5h2.5a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2z" />
+          <circle cx="12" cy="12.5" r="3.2" />
+        </svg>
+      );
+    case 'devtools':
+      return (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="3.5" y="4" width="17" height="13" rx="2" />
+          <path d="M8 21h8M12 17v4M7.5 9.5l2 2-2 2M12.5 13.5h3.5" />
+        </svg>
+      );
   }
 }
 

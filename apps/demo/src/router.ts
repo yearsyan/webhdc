@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export type TabId = 'terminal' | 'files' | 'transfer' | 'screenshot' | 'apps';
+export type TabId = 'terminal' | 'files' | 'transfer' | 'screenshot' | 'apps' | 'devtools';
 
 export interface TabDef {
   id: TabId;
@@ -30,6 +30,12 @@ export const TABS: readonly TabDef[] = [
     desc: '抓取设备屏幕画面，预览并下载',
   },
   { id: 'apps', hash: '#/apps', label: '应用管理', desc: '安装 HAP、查看已安装应用与卸载' },
+  {
+    id: 'devtools',
+    hash: '#/devtools',
+    label: 'WebView 调试',
+    desc: '映射 WebView 调试 socket 并内嵌 Chrome DevTools',
+  },
 ];
 
 const KNOWN_HASHES = new Map<string, TabId>(TABS.map((tab) => [tab.hash, tab.id]));

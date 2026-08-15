@@ -52,7 +52,7 @@ export function EmptyState() {
       <h2>未连接设备</h2>
       <p className={styles.desc}>
         通过 WebUSB 连接 HarmonyOS / OpenHarmony
-        设备后，即可在上方切换终端、文件浏览、文件传输与应用管理。
+        设备后，即可在上方切换终端、文件浏览、文件传输、应用管理与 WebView 调试。
       </p>
       {supportNote ? (
         <p className={styles.warn}>{supportNote}</p>

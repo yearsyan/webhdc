@@ -1,0 +1,379 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.commandFlow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.35fr) auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-2);
+}
+
+.commandFlow > i {
+  color: var(--muted);
+  font-style: normal;
+}
+
+.commandStep {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 0;
+}
+
+.commandStep > span {
+  display: inline-grid;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  place-items: center;
+}
+
+.commandStep > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.commandStep strong {
+  color: var(--ink-2);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.commandStep code {
+  display: block;
+  overflow: hidden;
+  background: transparent;
+  color: var(--ink);
+  font-size: 10.5px;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.error {
+  margin-bottom: 10px;
+  color: var(--danger);
+  font-size: 12.5px;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.socketList {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+
+.socketRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+.socketRow:first-child {
+  border-top: 0;
+}
+
+.socketRow:hover,
+.socketRow.selected {
+  background: var(--surface-2);
+}
+
+.socketMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.socketMeta > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.socketMeta strong {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.socketMeta code {
+  overflow: hidden;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.socketDot {
+  flex: 0 0 9px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 0 4px var(--ok-soft);
+}
+
+.empty {
+  display: flex;
+  min-height: 74px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  padding: 14px;
+  color: var(--muted);
+  font-size: 12.5px;
+  text-align: center;
+}
+
+.empty strong {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.viewer {
+  overflow: hidden;
+  border: 1px solid #30343b;
+  border-radius: 12px;
+  background: #202124;
+  box-shadow: 0 3px 14px rgba(18, 21, 26, 0.22);
+}
+
+/* 伪全屏：固定定位铺满浏览器内容区域（非原生 Fullscreen API），盖住顶栏与页脚 */
+.viewerFullscreen {
+  position: fixed;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  inset: 0;
+}
+
+.viewerFullscreen .devtoolsFrame {
+  height: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.viewerSide {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.viewerAction {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #aeb3ba;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.viewerAction:hover {
+  background: #333438;
+  color: #e8eaed;
+}
+
+.viewerAction[aria-pressed='true'] {
+  border-color: #4d5156;
+  background: #3c4043;
+  color: #e8eaed;
+}
+
+.viewerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 7px 10px;
+  border-bottom: 1px solid #30343b;
+  background: #292a2d;
+}
+
+.targetTabs {
+  display: flex;
+  flex: 1;
+  gap: 5px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.targetTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.targetTab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 300px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #aeb3ba;
+  cursor: pointer;
+}
+
+.targetTab:hover {
+  background: #333438;
+  color: #e8eaed;
+}
+
+.targetTabActive,
+.targetTabActive:hover {
+  border-color: #4d5156;
+  background: #3c4043;
+  color: #e8eaed;
+}
+
+.targetTab span {
+  overflow: hidden;
+  font-size: 11.5px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.targetTab small {
+  flex-shrink: 0;
+  color: #8ab4f8;
+  font-family: var(--mono);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.bridgeState {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 7px;
+  max-width: 340px;
+  color: #aeb3ba;
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.bridgeState > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f9ab00;
+}
+
+.bridgeState[data-state='open'] > span {
+  background: #81c995;
+}
+
+.bridgeState[data-state='error'] {
+  color: #f28b82;
+}
+
+.bridgeState[data-state='error'] > span,
+.bridgeState[data-state='closed'] > span {
+  background: #f28b82;
+}
+
+.devtoolsFrame {
+  display: block;
+  width: 100%;
+  height: max(650px, calc(100vh - 210px));
+  border: 0;
+  background: #202124;
+}
+
+.frameError {
+  display: flex;
+  height: 420px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px;
+  color: #f28b82;
+  font-size: 12px;
+  text-align: center;
+}
+
+.frameError strong {
+  color: #e8eaed;
+  font-size: 14px;
+}
+
+@media (max-width: 900px) {
+  .commandFlow {
+    grid-template-columns: 1fr;
+  }
+
+  .commandFlow > i {
+    display: none;
+  }
+
+  .viewerHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .viewerSide {
+    justify-content: space-between;
+  }
+
+  .bridgeState {
+    padding: 0 4px 3px;
+  }
+}
+
+@media (max-width: 640px) {
+  .socketRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .devtoolsFrame {
+    height: 680px;
+  }
+}

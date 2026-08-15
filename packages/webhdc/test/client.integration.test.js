@@ -46,6 +46,7 @@ class FakeHdcDevice {
     this.forwardEndpoint = null;
     this.forwardActive = [];
     this.forwardData = [];
+    this.awakenedChannels = new Set();
   }
 
   async open() {
@@ -164,7 +165,16 @@ class FakeHdcDevice {
       return;
     }
 
+    if (packet.command === COMMAND.KERNEL_WAKEUP_SLAVE_TASK) {
+      this.awakenedChannels.add(packet.channelId);
+      return;
+    }
+
     if (packet.command === COMMAND.FORWARD_CHECK) {
+      assert.ok(
+        this.awakenedChannels.has(packet.channelId),
+        'forward channel must wake the daemon slave task before checking the endpoint',
+      );
       const { id, endpoint } = decodeForwardRequest(packet.data);
       this.forwardChannelId = packet.channelId;
       this.forwardEndpoint = endpoint;
@@ -321,7 +331,7 @@ test('HdcClient forwards a virtual stream to a device abstract socket', async ()
   await client.disconnect();
 });
 
-test('HdcClient rejects forward when the device cannot reach the endpoint', async () => {
+test('HdcClient accepts the zero-valued check acknowledgement emitted by native HDC', async () => {
   const device = new FakeHdcDevice({ forwardCheckOk: false });
   const client = new HdcClient({
     usb: {
@@ -331,7 +341,9 @@ test('HdcClient rejects forward when the device cannot reach the endpoint', asyn
   });
 
   await client.connect(device);
-  await assert.rejects(client.forward('tcp:9222'), { code: 'HDC_FORWARD_CHECK_FAILED' });
+  const forward = await client.forward('tcp:9222');
+  assert.equal(forward.remote, 'tcp:9222');
+  await forward.close();
   await client.disconnect();
 });
 

@@ -689,6 +689,10 @@ export class HdcClient {
       (error: unknown) => this.#finishForward(forward, error),
     );
     try {
+      // Native HDC creates the daemon-side slave task only after this wake-up
+      // command. Sending FORWARD_CHECK directly on a fresh channel is ignored
+      // because the daemon has no TaskInformation for that channel yet.
+      await this.#sendCommand(channel.id, COMMAND.KERNEL_WAKEUP_SLAVE_TASK);
       await this.#sendCommand(
         channel.id,
         COMMAND.FORWARD_CHECK,
@@ -1078,7 +1082,7 @@ export class HdcClient {
       return;
     }
     if (packet.command === COMMAND.FORWARD_CHECK_RESULT) {
-      const { id, success } = decodeForwardCheckResult(packet.data);
+      const { id } = decodeForwardCheckResult(packet.data);
       if (id !== forward.checkId || !forward.check) {
         await this.#sendCommand(
           channel.id,
@@ -1093,16 +1097,10 @@ export class HdcClient {
         clearTimeout(forward.checkTimer);
         forward.checkTimer = null;
       }
-      if (success) {
-        check.resolve();
-      } else {
-        const error = new HdcError(`设备无法连接 forward 端点 ${forward.remote}`, {
-          code: 'HDC_FORWARD_CHECK_FAILED',
-        });
-        check.reject(error);
-        this.#dropChannel(channel, error);
-        this.#requestChannelClose(channel).catch(() => {});
-      }
+      // Match native HDC host behavior: receipt of CHECK_RESULT is the
+      // acknowledgement. The trailing byte is not a reliable success flag;
+      // successful libuv connects use status 0 and therefore send byte 0.
+      check.resolve();
       return;
     }
     if (packet.command === COMMAND.FORWARD_ACTIVE_MASTER) {
